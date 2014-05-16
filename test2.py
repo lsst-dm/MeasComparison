@@ -34,6 +34,9 @@ import numpy
 
 numpy.random.seed(1234)
 
+#  This is a comparison test for SdssShape.  It also does SdssCentroid, since the centroid
+#  value is used by the Shape algorithm.  Only the values which are supported in the version 0
+#  algorithms can be tested (e.g., not xy4 or flux)
 
 def compareArrays(array1, array2, relDiff):
     if not array1.shape[0] == array2.shape[0] or not array1.shape[1] == array2.shape[1]:
@@ -93,10 +96,16 @@ if __name__ == "__main__":
         label = "Shape: "
         if not (value==value0):
             if not (numpy.isnan(value.getIxx()) and numpy.isnan(value0.getIxx())):
-                print "Shape Values: ", record.getId(), value, value0
+                print label, " Values: ", record.getId(), value, value0
         if not compareArrays(error,error0, .001):
-            print "Shape Errors: ", record.getId(), record.getCentroid()
+            print label, " Errors: ", record.getId(), record.getCentroid()
         if not (flag == flag0):
-            print "Shape Flags: ", record.getId(), flag,value,flag0,value0 
+            print label, " Flags: ", record.getId(), flag,value,flag0,value0 
             print record.getShapeFlag(), record.get("base_SdssShape_flag_unweightedBad"), record.get("base_SdssShape_flag_unweighted"), record.get("base_SdssShape_flag_maxIter"), record.get("base_SdssShape_flag_shift")
             print record0.getShapeFlag(), record0.get("shape.sdss.flags.unweightedbad"), record0.get("shape.sdss.flags.unweighted"), record0.get("shape.sdss.flags.maxiter"), record0.get("shape.sdss.flags.shift")
+
+        value0 = record0.get("shape.sdss.centroid")
+        value = lsst.afw.geom.geomLib.Point2D(record.get("base_SdssShape_x"), record.get("base_SdssShape_y"))
+        label = "Shape Centroid: "
+        if not (value==value0) and not (flag0 and flag):
+            print label, " Values: ", record.getId(), value, value0

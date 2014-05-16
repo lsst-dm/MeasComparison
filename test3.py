@@ -88,11 +88,17 @@ if __name__ == "__main__":
             print label, "Flags differ: ", record.getCentroid(), record.getId(), record.getPsfFlux(), record0.getPsfFlux(), record.getPsfFluxFlag(), record0.getPsfFluxFlag()
         if not (abs((error-error0)/error0)<errorLimit) and not(numpy.isnan(error)) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Errors differ: ", record.getCentroid(), record.getId(), record.getPsfFluxErr(), record0.getPsfFluxErr(), record.getPsfFluxFlag(), record0.getPsfFluxFlag()
+
+        # test classification
         value = record.get("classification_extendedness")
         value0= record0.get("classification.extendedness")
         label = "Classification: "
-        if not (value == value0) and  not(numpy.isnan(value)):
+        if not (value == value0) and  not(numpy.isnan(value) and numpy.isnan(value0)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
+            print "new: ", record.getModelFlux(), record.getPsfFlux(), record.getModelFluxFlag(), record.getPsfFluxFlag()
+            print "old: ", record0.getModelFlux(), record0.getPsfFlux(), record0.getModelFluxFlag(), record0.getPsfFluxFlag()
+
+        # test PixelFlags
         label = "PixelFlags: "
         value = record.get("base_PixelFlags_flag_edge")
         value0 = record0.get("flags.pixel.edge")
