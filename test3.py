@@ -34,6 +34,8 @@ import numpy
 
 numpy.random.seed(1234)
 
+#  Simple Python routine to compare the meas_algorithm and meas_base misc algorithms
+#  Which are pixelflags, classification, skycoord
 
 if __name__ == "__main__":
 
@@ -63,6 +65,9 @@ if __name__ == "__main__":
     for i in range(len(measCat)):
         record = measCat[i]
         record0 = measCat0[i]
+ 
+        # Check the Centroids, but only if at least one of the flags is false.  
+        # The centroids behave differently on error for the old and new algorithms 
         error = record.getCentroidErr()
         error0 = record0.getCentroidErr()
         flag = record.getCentroidFlag()
@@ -70,11 +75,11 @@ if __name__ == "__main__":
         value = record.getCentroid()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        # Check the Centroids, but only if at least one of the flags is false.  
-        # The centroids behave differently on error for the old and new algorithms 
         if not (value==value0) and not(flag and flag0):
             print label, record.getCentroid(), record.getId(), record.getCentroid(), record0.getCentroid(), record.getCentroidFlag(), record0.getCentroidFlag()
 
+        #  Check PsfFlux.  But not the there is a difference, which is why we have valuelimit and errorlimit
+        #  to see how far off things are.
         value = record.getPsfFlux()
         value0 = record0.getPsfFlux()
         error = record.getPsfFluxErr()
@@ -98,7 +103,7 @@ if __name__ == "__main__":
             print "new: ", record.getModelFlux(), record.getPsfFlux(), record.getModelFluxFlag(), record.getPsfFluxFlag()
             print "old: ", record0.getModelFlux(), record0.getPsfFlux(), record0.getModelFluxFlag(), record0.getPsfFluxFlag()
 
-        # test PixelFlags
+        # test PixelFlags:  compare them all individually
         label = "PixelFlags: "
         value = record.get("base_PixelFlags_flag_edge")
         value0 = record0.get("flags.pixel.edge")
@@ -140,4 +145,10 @@ if __name__ == "__main__":
         label = "PixelFlags: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-
+    
+        # test skycoord:  note that these values should never be nan since centroid is never nan
+        label = "skycoord: "
+        value = record.getCoord()
+        value0 = record0.getCoord()
+        if not (value == value0):
+            print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
