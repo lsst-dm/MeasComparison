@@ -51,16 +51,29 @@ if __name__ == "__main__":
 #  and sfm.py.  "0" means the old meas_algorithm algorithms.  Only the measurement task is different.
 #  The pipeline preparatory to measurement should be all the same for both catalogs.   
 
-    errorLimit = 1
-    valueLimit = .001
+    # get the data files from previous pipline runs and compare them
+    # the slots have to be set up correctly for this comparison to work
+    # so check them first
     measCat0 = SourceCatalog.readFits(DATA_FILE0)
     measCat = SourceCatalog.readFits(DATA_FILE)
-    print measCat.getCentroidDefinition()
-    print measCat.getPsfFluxDefinition()
-    print measCat.getModelFluxDefinition()
-    print measCat0.getCentroidDefinition()
-    print measCat0.getPsfFluxDefinition()
-    print measCat0.getModelFluxDefinition()
+    assert(measCat.getCentroidDefinition()=="base_SdssCentroid")
+    assert(measCat.getPsfFluxDefinition()=="base_PsfFlux")
+    assert(measCat.getModelFluxDefinition()=="base_GaussianFlux")
+    assert(measCat.getInstFluxDefinition()=="base_NaiveFlux")
+    assert(measCat.getApFluxDefinition()=="base_SincFlux")
+    assert(measCat0.getCentroidDefinition()=="centroid.sdss")
+    assert(measCat0.getPsfFluxDefinition()=="flux.psf")
+    assert(measCat0.getModelFluxDefinition()=="flux.gaussian")
+    assert(measCat0.getInstFluxDefinition()=="flux.naive")
+    assert(measCat0.getApFluxDefinition()=="flux.sinc")
+    assert(len(measCat) == len(measCat0))
+    records = 0
+
+#---------------------------------------------------------------
+    # The Centroid slot should be run first, and has to give consistent results for the
+    # rest of the algorithms comparisons to be valid.
+    # In some cases, the new centroid algorithm will give Nans.  That is Ok as long as
+    # the footprint peak centroid is the same
     assert(len(measCat) == len(measCat0))
     for i in range(len(measCat)):
         record = measCat[i]
@@ -78,77 +91,89 @@ if __name__ == "__main__":
         if not (value==value0) and not(flag and flag0):
             print label, record.getCentroid(), record.getId(), record.getCentroid(), record0.getCentroid(), record.getCentroidFlag(), record0.getCentroidFlag()
 
-        #  Check PsfFlux.  But not the there is a difference, which is why we have valuelimit and errorlimit
-        #  to see how far off things are.
-        value = record.getPsfFlux()
-        value0 = record0.getPsfFlux()
-        error = record.getPsfFluxErr()
-        error0 = record0.getPsfFluxErr()
-        flag = record.getPsfFluxFlag()
-        flag0 = record0.getPsfFluxFlag()
-        label = "PsfFlux: "
-        if not (abs((value-value0)/value0)<valueLimit) and not(numpy.isnan(value)) and not record.get("base_PsfFlux_flag_edge"):
-            print label, "Values differ: ", record.getCentroid(), record.getId(), record.getPsfFlux(), record0.getPsfFlux(), record.getPsfFluxFlag(), record0.getPsfFluxFlag()
-        if (flag0 != flag) and not record.get("base_PsfFlux_flag_edge"):
-            print label, "Flags differ: ", record.getCentroid(), record.getId(), record.getPsfFlux(), record0.getPsfFlux(), record.getPsfFluxFlag(), record0.getPsfFluxFlag()
-        if not (abs((error-error0)/error0)<errorLimit) and not(numpy.isnan(error)) and not record.get("base_PsfFlux_flag_edge"):
-            print label, "Errors differ: ", record.getCentroid(), record.getId(), record.getPsfFluxErr(), record0.getPsfFluxErr(), record.getPsfFluxFlag(), record0.getPsfFluxFlag()
-
+#---------------------------------------------------------------
         # test classification
         value = record.get("classification_extendedness")
         value0= record0.get("classification.extendedness")
         label = "Classification: "
-        if not (value == value0) and  not(numpy.isnan(value) and numpy.isnan(value0)):
+        if not (value == value0) and  not(numpy.isnan(value) and numpy.isnan(value0)) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-            print "new: ", record.getModelFlux(), record.getPsfFlux(), record.getModelFluxFlag(), record.getPsfFluxFlag()
-            print "old: ", record0.getModelFlux(), record0.getPsfFlux(), record0.getModelFluxFlag(), record0.getPsfFluxFlag()
+            print "new model, psf: ", record.getModelFlux(), record.getPsfFlux(), record.getModelFluxFlag(), record.getPsfFluxFlag()
+            print "old model, psf: ", record0.getModelFlux(), record0.getPsfFlux(), record0.getModelFluxFlag(), record0.getPsfFluxFlag()
 
         # test PixelFlags:  compare them all individually
-        label = "PixelFlags: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_edge")
         value0 = record0.get("flags.pixel.edge")
+        label = "PixelFlagsEdge: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagsEdge: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_interpolated")
         value0 = record0.get("flags.pixel.interpolated.any")
+        label = "PixelFlagsInterpolated: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagPixelInterpolated: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_interpolatedCenter")
         value0 = record0.get("flags.pixel.interpolated.center")
+        label = "PixelFlagsInterpolatedCenter: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagInterpolatedCenter: "
+
+            footprint = record.getFootprint()
+            footprint0 = record0.getFootprint()
+            if (footprint != footprint0):
+                if footprint.getCentroid() != footprint0.getCentroid():
+                    print record.getFootprint().getCentroid(), record0.getFootprint().getCentroid()
+                spans = record.getFootprint().getSpans()
+                spans0 = record0.getFootprint().getSpans()
+                for i in range(len(spans)):
+                    span = spans[i]
+                    span0 = spans0[i]
+                    if span != span0:
+                        print span
+                        print span0
+
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_saturated")
         value0 = record0.get("flags.pixel.saturated.any")
+        label = "PixelFlagSaturated: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagSaturated: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_saturatedCenter")
         value0 = record0.get("flags.pixel.saturated.center")
+        label = "PixelFlagSaturatedCenter: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagsCr: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_cr")
         value0 = record0.get("flags.pixel.cr.any")
+        label = "PixelFlagsCr: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        label = "PixelFlagsCrCenter: "
+#---------------------------------------------------------------
         value = record.get("base_PixelFlags_flag_crCenter")
         value0 = record0.get("flags.pixel.cr.center")
+        label = "PixelFlagsCrCenter: "
+        if not (value == value0) and  not(numpy.isnan(value)):
+            print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
+#---------------------------------------------------------------
+        value = record.get("base_PixelFlags_flag_bad")
+        value0 = record0.get("flags.pixel.bad")
         label = "PixelFlagBad: "
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
-        value = record.get("base_PixelFlags_flag_bad")
-        value0 = record0.get("flags.pixel.bad")
-        label = "PixelFlags: "
+
         if not (value == value0) and  not(numpy.isnan(value)):
             print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
     
+#---------------------------------------------------------------
         # test skycoord:  note that these values should never be nan since centroid is never nan
         label = "skycoord: "
         value = record.getCoord()
         value0 = record0.getCoord()
         if not (value == value0):
-            print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
+            if not numpy.isnan(record.getCentroid().getX()) or not numpy.isnan(value.getRa().asDegrees()):
+                print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0
