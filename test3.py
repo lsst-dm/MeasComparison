@@ -33,6 +33,28 @@ import lsst.utils.tests
 import numpy
 
 numpy.random.seed(1234)
+def compareValues(val1, val2, tol):
+    if numpy.isnan(val1) and numpy.isnan(val2): return True
+    if val1 == val2: return True
+    if (val1+val2) == 0:
+        if not val1 == 0:
+            return abs((val1-val2)/val1) < tol
+    return abs(2.0*(val1-val2)/(val1+val2)) < tol
+
+def compareCoords(point1, point2, tol):
+    if not compareValues(point1.getRa().asDegrees(), point2.getRa().asDegrees(), tol): return False
+    return compareValues(point1.getDec().asDegrees(), point2.getDec().asDegrees(), tol)
+
+def comparePoints(point1, point2, tol):
+    if not compareValues(point1.getX(), point2.getX(), tol): return False
+    return compareValues(point1.getY(), point2.getY(), tol)
+
+def compareQuads(quad1, quad2, tol):
+    if not compareValues(quad1.getIxx(), quad2.getIxx(), tol): return False
+    if not compareValues(quad1.getIyy(), quad2.getIyy(), tol): return False
+    if not compareValues(quad1.getIxy(), quad2.getIxy(), tol): return False
+    return True
+
 
 #  Simple Python routine to compare the meas_algorithm and meas_base misc algorithms
 #  Which are pixelflags, classification, skycoord
@@ -88,7 +110,7 @@ if __name__ == "__main__":
         value = record.getCentroid()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        if not (value==value0) and not(flag and flag0):
+        if not comparePoints(value,value0,.0004) and not(flag and flag0):
             print label, record.getCentroid(), record.getId(), record.getCentroid(), record0.getCentroid(), record.getCentroidFlag(), record0.getCentroidFlag()
 
 #---------------------------------------------------------------
@@ -174,6 +196,6 @@ if __name__ == "__main__":
         label = "skycoord: "
         value = record.getCoord()
         value0 = record0.getCoord()
-        if not (value == value0):
+        if not compareCoords(value,value0,.0004):
             if not numpy.isnan(record.getCentroid().getX()) or not numpy.isnan(value.getRa().asDegrees()):
                 print label, "Values differ: ", record.getCentroid(), record.getId(), value, value0

@@ -38,6 +38,24 @@ numpy.random.seed(1234)
 #  value is used by the Shape algorithm.  Only the values which are supported in the version 0
 #  algorithms can be tested (e.g., not xy4 or flux)
 
+def compareValues(val1, val2, tol):
+    if numpy.isnan(val1) and numpy.isnan(val2): return True
+    if val1 == val2: return True
+    if (val1+val2) == 0:
+        if not val1 == 0:
+            return abs((val1-val2)/val1) < tol
+    return abs(2.0*(val1-val2)/(val1+val2)) < tol
+
+def comparePoints(point1, point2, tol):
+    if not compareValues(point1.getX(), point2.getX(), tol): return False
+    return compareValues(point1.getY(), point2.getY(), tol)
+
+def compareQuads(quad1, quad2, tol):
+    if not compareValues(quad1.getIxx(), quad2.getIxx(), tol): return False
+    if not compareValues(quad1.getIyy(), quad2.getIyy(), tol): return False
+    if not compareValues(quad1.getIxy(), quad2.getIxy(), tol): return False
+    return True
+
 def compareArrays(array1, array2, relDiff):
     if not array1.shape[0] == array2.shape[0] or not array1.shape[1] == array2.shape[1]:
          return False
@@ -98,7 +116,7 @@ if __name__ == "__main__":
         value = record.getCentroid()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        if not (value==value0) and not(flag and flag0):
+        if not comparePoints(value,value0, .001) and not(flag and flag0):
             print label, record.getCentroid(), record.getId(), value, value0, flag, flag0
 
 #---------------------------------------------------------------
@@ -117,7 +135,7 @@ if __name__ == "__main__":
 
         #   The old algorithms sets the Shape and errors even if the flag is set, whereas the new algorithm
         #   can't do that because the results are lost when the error is thrown
-        if not (value==value0):
+        if not compareQuads(value, value0, .01):
             # if both flags are set, count this as a match, but print the number of these
             if flag and flag0:
                 sdssflagcount = sdssflagcount+1
@@ -126,7 +144,7 @@ if __name__ == "__main__":
                 print label, " Values: ", record.getId(), value, value0
         #   Errors must be withing .1% unless the general flag is set
         if not compareArrays(error,error0, .001) and not (flag and flag0):
-            print label, " Errors: ", record.getId(), record.getCentroid()
+            print label, " Errors: ", record.getId(), record.getCentroid(), error, error0
         if not (flag == flag0):
                 print label, " Flags: ", record.getId(), flag,value,flag0,value0 
                 print record.getShapeFlag(), record.get("base_SdssShape_flag_unweightedBad"), \
@@ -140,7 +158,7 @@ if __name__ == "__main__":
         value0 = record0.get("shape.sdss.centroid")
         value = lsst.afw.geom.geomLib.Point2D(record.get("base_SdssShape_x"), record.get("base_SdssShape_y"))
         label = "Shape Centroid: "
-        if not (value==value0) and not (flag0 and flag):
+        if not comparePoints(value, value0, .001) and not (flag0 and flag):
             print label, " Values: ", record.getId(), value, value0
         records = records + 1
 

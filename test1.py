@@ -25,14 +25,30 @@ import math
 import sys
 import os
 from lsst.afw.table import Schema,SchemaMapper,SourceCatalog,SourceTable
-from lsst.meas.base.sfm import SingleFramePluginConfig, SingleFramePlugin, SingleFrameMeasurementTask
-from lsst.meas.base.base import *
+#from lsst.meas.base.base import *
 from lsst.meas.base.tests import *
 import unittest
 import lsst.utils.tests
 import numpy
 
 numpy.random.seed(1234)
+
+def xcompareValues(val1, val2, tol):
+    if numpy.isnan(val1) and numpy.isnan(val2): return True
+    if abs(val1-val2)/(val1+val2) > 2.0*tol: return False
+    return True
+
+def compareValues(val1, val2, tol):
+    if numpy.isnan(val1) and numpy.isnan(val2): return True
+    if (val1+val2) == 0:
+        if not val1 == 0:
+            return abs((val1-val2)/val1) < tol
+        return False 
+    return abs((val1-val2)/(val1+val2)) < 0.5*tol
+
+def comparePoints(point1, point2, tol):
+    if not compareValues(point1.getX(), point2.getX(), tol): return False
+    return compareValues(point1.getY(), point2.getY(), tol)
 
 #   This script compares the output from processCcd0 in mmout0 with
 #   the output from processCcd in mmout1
@@ -86,7 +102,7 @@ if __name__ == "__main__":
             value = record.getFootprint().getPeaks()[0].getF()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        if not (value==value0):
+        if not comparePoints(value,value0,.001):
             print label, record.getCentroid(), record.getId(), value, value0, flag, flag0
 
 #---------------------------------------------------------------
@@ -100,11 +116,12 @@ if __name__ == "__main__":
         flag = record.getPsfFluxFlag()
         flag0 = record0.getPsfFluxFlag()
         label = "PsfFlux: "
-        if not (abs((value-value0)/value0)<.001) and not(numpy.isnan(value)) and not record.get("base_PsfFlux_flag_edge"):
+        if not compareValues(value, value0, .001) and not(numpy.isnan(value)) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Values: ", record.getId(), record.getCentroid(), record0.getCentroid(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getId(), record.getCentroid(), record0.getCentroid(), flag, flag0
-        if not (abs((error-error0)/error0)<.001) and not(numpy.isnan(error)) and not record.get("base_PsfFlux_flag_edge"):
+            print record.get("base_PsfFlux_flag_edge")
+        if not compareValues(error, error0, .001) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 
 #---------------------------------------------------------------
@@ -118,11 +135,11 @@ if __name__ == "__main__":
         error = record.getInstFluxErr()
         error0 = record0.getInstFluxErr()
         label = "NaiveFlux: "
-        if not (value==value0) and not(numpy.isnan(value) and numpy.isnan(value0)):
+        if not compareValues(value, value0, .001):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not (error==error0) and not(numpy.isnan(error) and numpy.isnan(error0)):
+        if not compareValues(error, error0, .001):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 #---------------------------------------------------------------
         # Check the SincFlux in the ApFlux slot
@@ -135,11 +152,11 @@ if __name__ == "__main__":
         error = record.getApFluxErr()
         error0 = record0.getApFluxErr()
         label = "SincFlux: "
-        if not (value==value0) and not(numpy.isnan(value) and numpy.isnan(value0)):
+        if not compareValues(value, value0, .001):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not (error==error0) and not(numpy.isnan(error) and numpy.isnan(error0)):
+        if not compareValues(error, error0, .001):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 
 #---------------------------------------------------------------
@@ -153,17 +170,17 @@ if __name__ == "__main__":
         flag0 = record0.getModelFluxFlag()
         error = record.getModelFluxErr()
         label = "GaussianFlux: "
-        if not (value==value0) and not(numpy.isnan(value) and numpy.isnan(value0)):
+        if not compareValues(value, value0, .001):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not (error==error0) and not(numpy.isnan(error) and numpy.isnan(error0)):
+        if not compareValues(error, error0, .001):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
-        if not (value==value0) and not(numpy.isnan(value) and numpy.isnan(value0)):
+        if not compareValues(value, value0, .001):
             print label, record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
-        if not (error==error0) and not(numpy.isnan(error) and numpy.isnan(error0)):
+        if not compareValues(error, error0, .001):
             print label, "Errors: ", record.getCentroid(), record.getId(), record.getModelFluxErr(), record0.getModelFluxErr(), record.getModelFluxFlag(), record0.getModelFluxFlag()
 
         records = records + 1
