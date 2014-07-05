@@ -64,8 +64,8 @@ if __name__ == "__main__":
         sys.exit(1)
     # The visit comes in as the first argument on the command line.
     visit = sys.argv[1] 
-    DATA_FILE = "mmout1/src/v%s-fi/R22/S11.fits"%(visit,)
-    DATA_FILE0 = "mmout0/src/v%s-fi/R22/S11.fits"%(visit,)
+    DATA_FILE = "mmout12/deepCoadd-results/i/3/%s/src-i-3-%s.fits"%(visit,visit)
+    DATA_FILE0 = "mmout11/deepCoadd-results/i/3/%s/src-i-3-%s.fits"%(visit,visit)
 
     # get the data files from previous pipline runs and compare them
     # the slots have to be set up correctly for this comparison to work
@@ -75,17 +75,15 @@ if __name__ == "__main__":
     assert(measCat.getCentroidDefinition()=="base_SdssCentroid")
     assert(measCat.getPsfFluxDefinition()=="base_PsfFlux")
     assert(measCat.getModelFluxDefinition()=="base_GaussianFlux")
-    assert(measCat.getInstFluxDefinition()=="base_NaiveFlux")
+    assert(measCat.getInstFluxDefinition()=="base_GaussianFlux")
     assert(measCat.getApFluxDefinition()=="base_SincFlux")
     assert(measCat0.getCentroidDefinition()=="centroid.sdss")
     assert(measCat0.getPsfFluxDefinition()=="flux.psf")
     assert(measCat0.getModelFluxDefinition()=="flux.gaussian")
-    assert(measCat0.getInstFluxDefinition()=="flux.naive")
+    assert(measCat0.getInstFluxDefinition()=="flux.gaussian")
     assert(measCat0.getApFluxDefinition()=="flux.sinc")
     assert(len(measCat) == len(measCat0))
     records = 0
-    import pdb
-    pdb.set_trace()
 #---------------------------------------------------------------
     # The Centroid slot should be run first, and has to give consistent results for the
     # rest of the algorithms comparisons to be valid.
@@ -103,7 +101,7 @@ if __name__ == "__main__":
             value = record.getFootprint().getPeaks()[0].getF()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        if not comparePoints(value,value0,.001):
+        if not comparePoints(value,value0,.02):
             print label, record.getCentroid(), record.getId(), value, value0, flag, flag0
 
 #---------------------------------------------------------------
@@ -117,12 +115,12 @@ if __name__ == "__main__":
         flag = record.getPsfFluxFlag()
         flag0 = record0.getPsfFluxFlag()
         label = "PsfFlux: "
-        if not compareValues(value, value0, .001) and not(numpy.isnan(value)) and not record.get("base_PsfFlux_flag_edge"):
+        if not compareValues(value, value0, .02) and not(numpy.isnan(value)) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Values: ", record.getId(), record.getCentroid(), record0.getCentroid(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getId(), record.getCentroid(), record0.getCentroid(), flag, flag0
             print record.get("base_PsfFlux_flag_edge")
-        if not compareValues(error, error0, .001) and not record.get("base_PsfFlux_flag_edge"):
+        if not compareValues(error, error0, .02) and not record.get("base_PsfFlux_flag_edge"):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 
 #---------------------------------------------------------------
@@ -136,11 +134,11 @@ if __name__ == "__main__":
         error = record.getInstFluxErr()
         error0 = record0.getInstFluxErr()
         label = "NaiveFlux: "
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .02):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .02):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 #---------------------------------------------------------------
         # Check the SincFlux in the ApFlux slot
@@ -153,11 +151,11 @@ if __name__ == "__main__":
         error = record.getApFluxErr()
         error0 = record0.getApFluxErr()
         label = "SincFlux: "
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .02):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .02):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 
 #---------------------------------------------------------------
@@ -171,17 +169,17 @@ if __name__ == "__main__":
         flag0 = record0.getModelFluxFlag()
         error = record.getModelFluxErr()
         label = "GaussianFlux: "
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .02):
             print label, "Values: ", record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .02):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .02):
             print label, record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .02):
             print label, "Errors: ", record.getCentroid(), record.getId(), record.getModelFluxErr(), record0.getModelFluxErr(), record.getModelFluxFlag(), record0.getModelFluxFlag()
 
         records = records + 1

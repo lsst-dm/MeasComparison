@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
 #---------------------------------------------------------------
         # test classification
-        value = record.get("classification_extendedness")
+        value = record.get("base_classificationExtendedness")
         value0= record0.get("classification.extendedness")
         label = "Classification: "
         if not (value == value0) and  not(numpy.isnan(value) and numpy.isnan(value0)) and not record.get("base_PsfFlux_flag_edge"):

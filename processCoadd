@@ -1,0 +1,2 @@
+#!/bin/tcsh
+python $PIPE_TASKS_DIR/bin/processCoadd.py $work/measMosaicData/input_renamed -j 1  --clobber-config --configfile=processCoadd.py --config doWriteHeavyFootprintsInSources=True doDetection=True doDeblend=True doCalibrate=True calibrate.doPsf=False coaddName='deep'  --id tract=3 filter=i patch=84,56 --output mmout1

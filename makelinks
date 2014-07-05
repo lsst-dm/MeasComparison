@@ -1,0 +1,6 @@
+mkdir -p mmout0/deepCoadd/i/3
+mkdir -p mmout1/deepCoadd/i/3
+cp $work/mmout4/deepCoadd/skyMap.pickle mmout0/deepCoadd
+cp $work/mmout4/deepCoadd/skyMap.pickle mmout1/deepCoadd
+ln -s $work/mmout4/deepCoadd/i/3/84,56.fits mmout0/deepCoadd/i/3/84,56.fits
+ln -s $work/mmout4/deepCoadd/i/3/84,56.fits mmout1/deepCoadd/i/3/84,56.fits
