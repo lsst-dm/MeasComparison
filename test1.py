@@ -50,6 +50,22 @@ def comparePoints(point1, point2, tol):
     if not compareValues(point1.getX(), point2.getX(), tol): return False
     return compareValues(point1.getY(), point2.getY(), tol)
 
+def compareArrays(array1, array2, relDiff):
+    if not array1.shape[0] == array2.shape[0] or not array1.shape[1] == array2.shape[1]:
+         return False
+    for i in range(array1.shape[0]):
+        for j in range(array1.shape[1]):
+            val1 = array1[i][j]
+            val2 = array2[i][j]
+            if numpy.isnan(val1) and numpy.isnan(val2):
+                continue
+            if numpy.isnan(val1) or numpy.isnan(val2):
+                return False
+            if abs(val1 == val2): continue
+            if abs(2.0*(val1-val2)/(val1+val2)) < relDiff: continue
+            return False
+    return True
+
 #   This script compares the output from processCcd0 in mmout0 with
 #   the output from processCcd in mmout1
 #
@@ -84,8 +100,6 @@ if __name__ == "__main__":
     assert(measCat0.getApFluxDefinition()=="flux.sinc")
     assert(len(measCat) == len(measCat0))
     records = 0
-    import pdb
-    pdb.set_trace()
 #---------------------------------------------------------------
     # The Centroid slot should be run first, and has to give consistent results for the
     # rest of the algorithms comparisons to be valid.
@@ -103,8 +117,8 @@ if __name__ == "__main__":
             value = record.getFootprint().getPeaks()[0].getF()
         value0 = record0.getCentroid()
         label = "Centroid: "
-        if not comparePoints(value,value0,.001):
-            print label, record.getCentroid(), record.getId(), value, value0, flag, flag0
+        if not comparePoints(value,value0,.0000001):
+            print label, record.getId(), "%15.12f,%15.12f"%(value.getX(),value.getY()), "%15.12f,%15.12f"%(value0.getX(),value0.getY()), flag, flag0
 
 #---------------------------------------------------------------
         # Check the PsfFlux in the PsfFlux slot.  Note that the PsfFlux code was rewritten, and does not quite
@@ -136,11 +150,11 @@ if __name__ == "__main__":
         error = record.getInstFluxErr()
         error0 = record0.getInstFluxErr()
         label = "NaiveFlux: "
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .0001):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .0001):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 #---------------------------------------------------------------
         # Check the SincFlux in the ApFlux slot
@@ -153,11 +167,11 @@ if __name__ == "__main__":
         error = record.getApFluxErr()
         error0 = record0.getApFluxErr()
         label = "SincFlux: "
-        if not compareValues(value, value0, .001):
+        if not compareValues(value, value0, .0001):
             print label, record.getCentroid(), record.getId(), value, value0
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), flag, flag0
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .0001):
             print label, "Errors: ", record.getCentroid(), record.getId(), error, error0
 
 #---------------------------------------------------------------
@@ -181,7 +195,7 @@ if __name__ == "__main__":
             print label, record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
         if (flag0 != flag):
             print label, "Flags: ", record.getCentroid(), record.getId(), record.getModelFlux(), record0.getModelFlux(), record.getModelFluxFlag(), record0.getModelFluxFlag()
-        if not compareValues(error, error0, .001):
+        if not compareValues(error, error0, .00001):
             print label, "Errors: ", record.getCentroid(), record.getId(), record.getModelFluxErr(), record0.getModelFluxErr(), record.getModelFluxFlag(), record0.getModelFluxFlag()
 
         records = records + 1

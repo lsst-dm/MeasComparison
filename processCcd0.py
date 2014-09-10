@@ -10,7 +10,7 @@ root.calibrate.measurement.algorithms.names -= ["correctfluxes"]
 #
 #
 root.measurement.algorithms.names -= ["correctfluxes"]
-#root.measurement.slots.centroid = "centroid.sdss"
+root.measurement.slots.centroid = "centroid.sdss"
 #root.measurement.slots.shape = "shape.sdss"
 #root.measurement.slots.apFlux = "flux.sinc"
 #root.measurement.slots.modelFlux = "flux.gaussian"
